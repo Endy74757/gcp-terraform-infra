@@ -4,7 +4,7 @@
 -1.  **Terraform**: ติดตั้ง Terraform (เวอร์ชัน 1.0.0 หรือสูงกว่า)
 -2.  **Google Cloud SDK**: ติดตั้ง `gcloud` CLI และทำการยืนยันตัวตน
 -3.  **GCP Project**: มีโปรเจกต์ GCP ที่พร้อมใช้งาน
--4.  **Service Account**: สร้าง Service Account และดาวน์โหลดไฟล์ Key ในรูปแบบ JSON (ในโปรเจกต์นี้คาดว่าจะมีไฟล์ชื่อ `terraform-trianning-a9fe9bf713a2.json` อยู่ในไดเรกทอรีเดียวกัน)
+-4.  **Service Account**: สร้าง Service Account และดาวน์โหลดไฟล์ Key ในรูปแบบ JSON (ในโปรเจกต์นี้คาดว่าจะมีไฟล์ชื่อ `svc-account-key.json` อยู่ในไดเรกทอรีเดียวกัน)
 -
 -## การใช้งาน (Usage)
 -
@@ -56,6 +56,10 @@
 -    region     = "asia-southeast1"
 +    # ID ของโปรเจกต์ GCP ของคุณ
 +    project_id = "my-awesome-gcp-project"
++    
++    # service account ของโปรเจกต์ GCP ของคุณ
++    credentials = "Path/To/svc-account-key.json"
++
 +
 +    # รายการ API ที่ต้องการเปิดใช้งาน
 +    services = [
