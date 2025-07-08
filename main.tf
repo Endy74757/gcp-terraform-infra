@@ -22,8 +22,4 @@ module "compute" {
   region         = var.region
   instance_configs = var.instance_configs
   subnet_map     = module.network.subnet_map
-  depends_on = [
-    module.service,
-    module.network
-  ]
 }

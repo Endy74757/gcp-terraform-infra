@@ -1,5 +1,5 @@
 #GCP provider
 provider "google" {
-    credentials = file(var.credentials)
+    credentials = var.credentials != null ? file(var.credentials) : null
     region      = var.region
 }
