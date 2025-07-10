@@ -4,6 +4,8 @@ resource "google_compute_instance" "vm" {
   name         = each.key
   machine_type = each.value.machine_type
   zone         = each.value.zone
+  can_ip_forward = each.value.ip_forward
+  
 
   boot_disk {
     initialize_params {
@@ -15,11 +17,11 @@ resource "google_compute_instance" "vm" {
     network    = var.subnet_map[each.value.subnet].network
     subnetwork = var.subnet_map[each.value.subnet].name
     subnetwork_project = var.project_id
-
     dynamic "access_config" {
       for_each = each.value.assign_public_ip ? [1] : []
       content {}
     }
+    
   }
 
   tags = [each.value.subnet]

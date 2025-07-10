@@ -15,6 +15,7 @@ variable "instance_configs" {
     zone         = string
     machine_type = string
     subnet       = string
+    ip_forward = optional(bool, false)
     assign_public_ip = optional(bool, false)
   }))
 }
@@ -22,6 +23,16 @@ variable "instance_configs" {
 variable "subnets_config" {
   type = map(object({
     cidr_range = string
+  }))
+}
+
+variable "firewalls_config" {
+  type = map(object({
+    protocol = string
+    ports    = list(string)
+    description = string
+    src = list(string)
+    dest = optional(list(string),null)
   }))
 }
 

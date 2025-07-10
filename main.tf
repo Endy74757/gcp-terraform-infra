@@ -11,6 +11,7 @@ module "network" {
   project_id = var.project_id
   region = var.region
   subnets = var.subnets_config
+  firewalls = var.firewalls_config
   depends_on = [
     module.service
   ]

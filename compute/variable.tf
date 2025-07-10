@@ -7,6 +7,7 @@ variable "instance_configs" {
     zone         = string
     machine_type = string
     subnet       = string
+    ip_forward = optional(bool, false)
     assign_public_ip = optional(bool, false)
   }))
 }

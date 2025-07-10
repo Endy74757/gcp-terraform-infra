@@ -12,4 +12,14 @@ variable "subnets" {
   }))
 }
 
+variable "firewalls" {
+  type = map(object({
+    protocol = string
+    ports    = list(string)
+    description = string
+    src = list(string)
+    dest = optional(list(string),null)
+  }))
+}
+
 variable "region" {}
