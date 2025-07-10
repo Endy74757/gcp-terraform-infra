@@ -58,11 +58,11 @@ Terraform จะตรวจจับและใช้ credentials นี้โ
     cd infra
     ```
 
--2.  **กำหนดค่าตัวแปร:**
+2.  **กำหนดค่าตัวแปร:**
     สร้างไฟล์ `terraform.tfvars` จากตัวอย่าง `terraform.tfvars.example` (หรือสร้างขึ้นมาใหม่) เพื่อกำหนดค่าที่จำเป็น
 
     **ตัวอย่าง `terraform.tfvars`:**
-2.  **สร้างไฟล์ `terraform.tfvars`:**
+3.  **สร้างไฟล์ `terraform.tfvars`:**
     คัดลอกไฟล์ `terraform.tfvars.example` มาเป็น `terraform.tfvars` และแก้ไขค่าตัวแปรให้ตรงกับสภาพแวดล้อมของคุณ
 
     ```sh
@@ -114,7 +114,7 @@ Terraform จะตรวจจับและใช้ credentials นี้โ
     }
     ```
 
-3.  **Deploy โครงสร้างพื้นฐาน:**
+4.  **Deploy โครงสร้างพื้นฐาน:**
     รันคำสั่ง Terraform ตามลำดับ
 
     ```sh
@@ -128,7 +128,7 @@ Terraform จะตรวจจับและใช้ credentials นี้โ
     terraform apply
     ```
 
-4.  **ทำลาย Resources:**
+5.  **ทำลาย Resources:**
     หากต้องการลบ resources ทั้งหมดที่สร้างโดย Terraform ให้รันคำสั่ง:
     ```sh
     terraform destroy
