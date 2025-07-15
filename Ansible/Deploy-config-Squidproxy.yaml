@@ -10,27 +10,31 @@
         name: squid
         state: present
         update_cache: yes
-    
-    - name: Insert Squid ACL config into squid.conf
-      ansible.builtin.blockinfile:
-        path: /etc/squid/squid.conf
-        block: |
-          acl private_network src {{ private_cidr }}
-          acl internal_network src {{ internal_cidr }}  
-          http_access allow private_network
-          http_access allow internal_network
-        marker: "# {mark} ANSIBLE_MANAGED_SQUID_ACL"
-        insertafter: EOF
-      notify: Restart Squid
-    
+
     - name: Enable and start SquidProxy
       systemd:
         name: squid
         enabled: true
         state: started
+    
+    - name: Insert Squid ACL config into squid.conf
+      ansible.builtin.blockinfile:
+        path: /etc/squid/squid.conf
+        insertbefore: '^\s*http_access deny all'
+        block: |
+          # Custom ACLs for local networks
+          acl private_network src {{ private_cidr }}
+          acl internal_network src {{ internal_cidr }}
+
+          # Allow access from local networks
+          http_access allow private_network
+          http_access allow internal_network
+        marker: "# {mark} ANSIBLE MANAGED SQUID ACLS"
+        validate: /usr/sbin/squid -k parse -f %s
+      notify: Restart Squid
   
   handlers:
-    - name: Restart SquidProxy
+    - name: Restart Squid
       service:
         name: squid
-        state: restarted
+        state: restarted 
