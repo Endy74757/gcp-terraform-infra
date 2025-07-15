@@ -1,0 +1,27 @@
+- name: Configure HTTP/HTTPS proxy for system-wide use
+  hosts: all
+  become: true
+  vars:
+    squid_proxy_port: 3128
+  tasks:
+    - name: Set http_proxy in /etc/environment
+      ansible.builtin.lineinfile:
+        path: /etc/environment
+        line: 'http_proxy="http://{{ hostvars: ['squidproxy'] ['ansible_host'] }}:{{ squid_proxy_port }}"'
+        regexp: '^http_proxy=' # ใช้ regexp เพื่ออัปเดตบรรทัดเดิมหากมีอยู่แล้ว
+        state: present
+
+    - name: Set https_proxy in /etc/environment
+      ansible.builtin.lineinfile:
+        path: /etc/environment
+        line: 'https_proxy="http://{{ hostvars: ['squidproxy'] ['ansible_host'] }}:{{ squid_proxy_port }}"'
+        regexp: '^https_proxy=' # ใช้ regexp เพื่ออัปเดตบรรทัดเดิมหากมีอยู่แล้ว
+        state: present
+
+    # คุณอาจต้องการเพิ่ม no_proxy ด้วย หากมี hosts ที่ไม่ต้องการให้ผ่าน proxy
+    - name: Set no_proxy in /etc/environment
+      ansible.builtin.lineinfile:
+        path: /etc/environment
+        line: 'no_proxy="localhost,127.0.0.1"'
+        regexp: '^no_proxy='
+        state: present

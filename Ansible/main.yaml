@@ -1,4 +1,5 @@
 ---
-- import_playbook: Deploy-jenkins.yaml
+- import_playbook: Configure-HTTP-HTTPS-proxy.yaml
 - import_playbook: Deploy-config-Squidproxy.yaml
 - import_playbook: Deploy-config-Haproxy.yaml
+- import_playbook: Deploy-jenkins.yaml
