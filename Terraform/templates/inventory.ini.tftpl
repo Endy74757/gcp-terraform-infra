@@ -1,0 +1,7 @@
+%{ for subnet_name, vms in vms_by_subnet ~}
+[${subnet_name}]
+%{ for vm_name, vm_details in vms ~}
+${vm_name} ansible_host=${vm_details.internal_ip} ansible_user=root
+%{ endfor ~}
+
+%{ endfor ~}

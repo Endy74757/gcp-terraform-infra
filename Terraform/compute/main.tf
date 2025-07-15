@@ -5,11 +5,13 @@ resource "google_compute_instance" "vm" {
   machine_type = each.value.machine_type
   zone         = each.value.zone
   can_ip_forward = each.value.ip_forward
-  
+  labels = {
+    role = each.key
+  }
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-11"
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }
 
