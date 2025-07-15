@@ -1,5 +1,5 @@
 - name: Set system-wide proxy permanently
-  hosts: private:&internal
+  hosts: private, internal
   become: true
   vars:
     proxy_ip: "192.168.1.6" # <--- ใส่ IP ของ Squid Proxy ที่นี่
