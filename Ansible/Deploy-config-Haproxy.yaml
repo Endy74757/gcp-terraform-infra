@@ -9,6 +9,12 @@
         name: haproxy
         state: present
         update_cache: yes
+
+    - name: Enable and start HAProxy
+      systemd:
+        name: haproxy
+        enabled: true
+        state: started
     
     - name: Add Jenkins frontend and backend configuration to haproxy.cfg
       ansible.builtin.blockinfile:
@@ -26,12 +32,6 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK FOR JENKINS HAProxy" # Marker ที่จะใช้ระบุบล็อกนี้
         insertafter: EOF # เพิ่มที่ท้ายไฟล์ (End Of File) หรือคุณจะระบุบรรทัดอื่นก็ได้
       notify: Restart HAProxy
-    
-    - name: Enable and start HAProxy
-      systemd:
-        name: haproxy
-        enabled: true
-        state: started
   
   handlers:
     - name: Restart HAProxy
