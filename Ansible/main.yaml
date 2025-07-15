@@ -1,0 +1,4 @@
+---
+- import_playbook: Deploy-jenkins.yaml
+- import_playbook: Deploy-config-Squidproxy.yaml
+- import_playbook: Deploy-config-Haproxy.yaml

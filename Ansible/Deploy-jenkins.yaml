@@ -1,0 +1,38 @@
+- name: Deploy Jenkins
+  hosts: jenkins
+  become: true
+  tasks:
+    - name: Install Java
+      apt:
+        name: openjdk-21-jre
+        state: present
+        update_cache: yes
+    
+    - name: Add key APT Jenkins's repository
+      ansible.builtin.apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins.io-2023.key
+        state: present 
+        
+    - name: Add APT Jenkins's repository
+      ansible.builtin.apt_repository:
+        repo: deb https://pkg.jenkins.io/debian binary/
+        state: present
+        filename: jenkins
+    
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+    
+    - name: Enable Jenkins
+      systemd:
+        name: jenkins.service
+        enabled: true
+        state: started
+  
+  handlers:
+    - name: Restart Jenkins
+      service:
+        name: jenkins.service
+        state: restarted

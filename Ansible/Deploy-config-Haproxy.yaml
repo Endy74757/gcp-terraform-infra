@@ -1,0 +1,38 @@
+- name: Deploy HAProxy
+  hosts: haproxy
+  become: true
+  tasks:
+    - name: Install HAProxy
+      apt:
+        name: haproxy
+        state: present
+        update_cache: yes
+    
+    - name: Add Jenkins frontend and backend configuration to haproxy.cfg
+      ansible.builtin.blockinfile:
+        path: /etc/haproxy/haproxy.cfg
+        block: |
+          frontend fe_jenkins
+                  bind *:8080
+                  mode tcp
+                  default_backend be_jenkins
+    
+          backend be_jenkins
+                  balance roundrobin
+                  mode tcp
+                  server jenkins1 {{ hostsvars: ['jenkins'] ['ansible_host'] }}:8080 check
+        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR JENKINS HAProxy" # Marker ที่จะใช้ระบุบล็อกนี้
+        insertafter: EOF # เพิ่มที่ท้ายไฟล์ (End Of File) หรือคุณจะระบุบรรทัดอื่นก็ได้
+      notify: Restart HAProxy
+    
+    - name: Enable and start HAProxy
+      systemd:
+        name: haproxy
+        enabled: true
+        state: started
+  
+  handlers:
+    - name: Restart Haproxy
+      service:
+        name: haproxy
+        state: restarted

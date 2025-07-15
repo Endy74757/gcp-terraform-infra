@@ -1,0 +1,36 @@
+- name: Deploy SqiudProxy
+  hosts: squidproxy
+  become: true
+  vars:
+    private_cidr: "192.168.2.0/24"
+    internal_cidr: "192.168.3.0/24"
+  tasks:
+    - name: Install Squid
+      apt:
+        name: squid
+        state: present
+        update_cache: yes
+    
+    - name: Insert Squid ACL config into squid.conf
+      ansible.builtin.blockinfile:
+        path: /etc/squid/squid.conf
+        block: |
+          acl private_network src {{ private_cidr }}
+          acl internal_network src {{ internal_cidr }}  
+          http_access allow private_network
+          http_access allow internal_network
+        marker: "# {mark} ANSIBLE_MANAGED_SQUID_ACL"
+        insertafter: EOF
+      notify: Restart Squid
+    
+    - name: Enable and start SquidProxy
+      systemd:
+        name: squid
+        enabled: true
+        state: started
+  
+  handlers:
+    - name: Restart SquidProxy
+      service:
+        name: squid
+        state: restarted
