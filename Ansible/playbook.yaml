@@ -1,0 +1,11 @@
+- name: Deploy HAProxy
+  hosts: haproxy
+  become: true
+  roles:
+    - haproxy
+
+- name: Deploy SqiudProxy
+  hosts: squidproxy
+  become: true
+  roles:
+    - squidproxy
