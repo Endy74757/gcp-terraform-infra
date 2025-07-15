@@ -1,3 +1,0 @@
-private_cidr: "192.168.2.0/24"
-internal_cidr: "192.168.3.0/24"
-
