@@ -1,6 +1,24 @@
 - hosts: k8s
   become: yes
   tasks:
+    - name: Enable ip_forward temporarily
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        reload: yes
+
+    - name: Make ip_forward permanent
+      copy:
+        dest: /etc/sysctl.d/99-kubernetes-ip-forward.conf
+        content: "net.ipv4.ip_forward=1\n"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Reload sysctl settings
+      command: sysctl --system
+    
     - name: Install containerd
       apt:
         name: containerd
@@ -63,13 +81,6 @@
         - kubeadm
         - kubelet
         - kubectl
-    
-    - name: Install Calico network plugin
-      command: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-
-    - name: Initialize Kubernetes master
-      command: kubeadm init --pod-network-cidr=10.244.0.0/16
-      ignore_errors: yes
 
     - name: Set up kubectl for the current user
       command: "{{ item }}"
@@ -77,3 +88,6 @@
         - "mkdir -p ~/.kube"
         - "cp /etc/kubernetes/admin.conf ~/.kube/config"
         - "chown $(id -u):$(id -g) ~/.kube/config"
+
+    - name: Install Calico network plugin
+      command: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
