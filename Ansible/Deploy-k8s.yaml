@@ -82,6 +82,9 @@
         - kubelet
         - kubectl
 
+    - name: Initialize the Kubernetes cluster using kubeadm
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+
     - name: Set up kubectl for the current user
       command: "{{ item }}"
       with_items:
