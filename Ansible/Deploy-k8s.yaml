@@ -36,7 +36,7 @@
 
     - name: Adding apt repository for Kubernetes
       apt_repository:
-        repo: https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
+        repo: deb https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
         state: present
         filename: kubernetes.list
 
