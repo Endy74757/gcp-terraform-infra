@@ -168,8 +168,8 @@
       environment:
         # สำคัญมาก: Unset HTTP_PROXY และ HTTPS_PROXY สำหรับคำสั่ง kubeadm init
         # เพื่อป้องกันไม่ให้ kubeadm พยายามใช้ proxy ในการสื่อสารภายในคลัสเตอร์
-        HTTP_PROXY: ""
-        HTTPS_PROXY: ""
+        http_proxy: ""
+        https_proxy: ""
         # ตรวจสอบให้แน่ใจว่า NO_PROXY ของระบบครอบคลุมช่วง IP ของ Kubernetes
         # หากยังไม่แน่ใจ แนะนำให้เพิ่ม NO_PROXY ที่นี่ด้วย
         # ตัวอย่าง:
@@ -207,10 +207,6 @@
     - name: Apply Calico CNI (or other CNI of your choice)
       ansible.builtin.command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
       # คุณอาจจะต้อง unset proxy สำหรับ kubectl apply ด้วย หากยังเจอปัญหา
-      environment:
-        HTTP_PROXY: ""
-        HTTPS_PROXY: ""
-        # NO_PROXY: "..." (ตามที่แนะนำข้างต้น)
       when: kubeadm_init_result.changed
  
   handlers:
