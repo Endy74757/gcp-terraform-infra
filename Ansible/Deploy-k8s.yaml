@@ -57,15 +57,13 @@
         - kubeadm
         - kubelet
         - kubectl
+    
+    - name: Install Calico network plugin
+      command: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
 
     - name: Initialize Kubernetes master
       command: kubeadm init --pod-network-cidr=10.244.0.0/16
-      register: kubeadm_output
       ignore_errors: yes
-
-    - name: Install Calico network plugin
-      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-      when: "'calico' in kubeadm_output.stdout"
 
     - name: Set up kubectl for the current user
       command: "{{ item }}"
