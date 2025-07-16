@@ -63,13 +63,13 @@
       register: kubeadm_output
       ignore_errors: yes
 
+    - name: Install Calico network plugin
+      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      when: "'calico' in kubeadm_output.stdout"
+
     - name: Set up kubectl for the current user
       command: "{{ item }}"
       with_items:
         - "mkdir -p ~/.kube"
         - "cp /etc/kubernetes/admin.conf ~/.kube/config"
         - "chown $(id -u):$(id -g) ~/.kube/config"
-
-    - name: Install Calico network plugin
-      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-      when: "'calico' in kubeadm_output.stdout"
