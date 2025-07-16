@@ -1,15 +1,58 @@
 - hosts: k8s
   become: yes
   tasks:
-    - name: Install Docker
+    - name: Install containerd
       apt:
-        name: docker.io
+        name: containerd
         state: present
+        update_cache: yes
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+    
+    - name: Remove swapfile from /etc/fstab
+      mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      with_items:
+        - swap
+        - none
+
+    - name: Disable swap
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+
+    - name: Add an apt signing key for Kubernetes
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Adding apt repository for Kubernetes
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: kubernetes.list
 
     - name: Install kubeadm, kubelet, and kubectl
       apt:
         name: "{{ item }}"
         state: present
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+
+    - name: Mark Kubernetes packages to be held
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
       loop:
         - kubeadm
         - kubelet
@@ -23,9 +66,9 @@
     - name: Set up kubectl for the current user
       command: "{{ item }}"
       with_items:
-        - "mkdir -p $HOME/.kube"
-        - "cp /etc/kubernetes/admin.conf $HOME/.kube/config"
-        - "chown $(id -u):$(id -g) $HOME/.kube/config"
+        - "mkdir -p ~/.kube"
+        - "cp /etc/kubernetes/admin.conf ~/.kube/config"
+        - "chown $(id -u):$(id -g) ~/.kube/config"
 
     - name: Install Calico network plugin
       command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
