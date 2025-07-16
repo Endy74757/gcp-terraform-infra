@@ -31,7 +31,7 @@
 
     - name: Add an apt signing key for Kubernetes
       apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
         state: present
 
     - name: Adding apt repository for Kubernetes
