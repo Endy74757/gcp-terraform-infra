@@ -29,10 +29,16 @@
       command: swapoff -a
       when: ansible_swaptotal_mb > 0
 
-    - name: Add an apt signing key for Kubernetes
-      apt_key:
-        url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
-        state: present
+    - name: Create keyring directory for Kubernetes
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Kubernetes APT repository GPG key
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
     - name: Adding apt repository for Kubernetes
       apt_repository:
