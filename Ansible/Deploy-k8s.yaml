@@ -1,5 +1,27 @@
 - hosts: k8s
   become: yes
+  vars:
+    http_proxy_env: "http://192.168.1.6:3128"
+    https_proxy_env: "http://192.168.1.6:3128"
+    no_proxy_env: "localhost,127.0.0.1,10.96.0.0/12,10.244.0.0/16,kubernetes.default.svc,*.svc,*.svc.cluster.local,192.168.2.3"
+    k8s_version: "v1.30.1"
+    image_registry: "registry.k8s.io"
+    image_list:
+      - name: kube-apiserver
+        tag: "{{ k8s_version }}"
+      - name: kube-controller-manager
+        tag: "{{ k8s_version }}"
+      - name: kube-scheduler
+        tag: "{{ k8s_version }}"
+      - name: kube-proxy
+        tag: "{{ k8s_version }}"
+      - name: pause
+        tag: "3.9"
+      - name: etcd
+        tag: "3.5.10-0"
+      - name: coredns/coredns
+        tag: "v1.11.1"
+
   tasks:
     - name: Enable ip_forward temporarily
       sysctl:
@@ -24,6 +46,41 @@
         name: containerd
         state: present
         update_cache: yes
+
+    - name: Create containerd service.d directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/containerd.service.d
+        state: directory
+        mode: '0755' # กำหนดสิทธิ์ของ directory
+
+    - name: Create or update http-proxy.conf for containerd
+      ansible.builtin.template:
+        src: containerd_http-proxy.conf.j2 # ไฟล์ template ที่จะสร้าง
+        dest: /etc/systemd/system/containerd.service.d/http-proxy.conf
+        mode: '0644' # กำหนดสิทธิ์ของไฟล์
+      notify: Restart containerd
+
+    - name: Create containerd config directory
+      file:
+        path: /etc/containerd
+        state: directory
+        mode: '0755'
+
+    - name: Generate default containerd config
+      shell: containerd config default
+      register: containerd_default_config
+
+    - name: Write containerd config.toml
+      copy:
+        dest: /etc/containerd/config.toml
+        content: "{{ containerd_default_config.stdout }}"
+
+    - name: Enable SystemdCgroup in containerd config
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: '^(\s*)SystemdCgroup = false'
+        replace: '\1SystemdCgroup = true'
+      notify: Restart containerd
 
     - name: Install required system packages
       apt:
@@ -82,15 +139,83 @@
         - kubelet
         - kubectl
 
-    - name: Initialize the Kubernetes cluster using kubeadm
-      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+    - name: Pull Kubernetes component images using ctr
+      shell: >
+        ctr -n k8s.io image pull {{ image_registry }}/{{ item.name }}:{{ item.tag }}
+      loop: "{{ image_list }}"
+      register: pull_results
 
-    - name: Set up kubectl for the current user
-      command: "{{ item }}"
-      with_items:
-        - "mkdir -p ~/.kube"
-        - "cp /etc/kubernetes/admin.conf ~/.kube/config"
-        - "chown $(id -u):$(id -g) ~/.kube/config"
+    - name: Replace sandbox_image version in containerd config
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: 'sandbox_image\s*=\s*".*?"'
+        replace: 'sandbox_image = "registry.k8s.io/pause:3.9"'
 
-    - name: Install Calico network plugin
-      command: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+    - name: Ensure systemd manager configuration is reloaded
+      ansible.builtin.systemd_service:
+        daemon_reload: yes
+      notify: Restart containerd
+    
+    - name: kubeadm reset
+      ansible.builtin.command: >
+        kubeadm reset -f
+      notify: Restart containerd
+
+    - name: Run kubeadm init to initialize the Kubernetes cluster
+      ansible.builtin.command: >
+        kubeadm init
+        --pod-network-cidr={{ pod_network_cidr | default('10.244.0.0/16') }}
+      environment:
+        # สำคัญมาก: Unset HTTP_PROXY และ HTTPS_PROXY สำหรับคำสั่ง kubeadm init
+        # เพื่อป้องกันไม่ให้ kubeadm พยายามใช้ proxy ในการสื่อสารภายในคลัสเตอร์
+        HTTP_PROXY: ""
+        HTTPS_PROXY: ""
+        # ตรวจสอบให้แน่ใจว่า NO_PROXY ของระบบครอบคลุมช่วง IP ของ Kubernetes
+        # หากยังไม่แน่ใจ แนะนำให้เพิ่ม NO_PROXY ที่นี่ด้วย
+        # ตัวอย่าง:
+        # NO_PROXY: "localhost,127.0.0.1,10.96.0.0/12,10.244.0.0/16,kubernetes.default.svc,*.svc,*.svc.cluster.local,{{ ansible_default_ipv4.address }}"
+      register: kubeadm_init_result # <-- เก็บผลลัพธ์ของคำสั่งไว้ในตัวแปรนี้
+      # กำหนดเงื่อนไขว่า Task นี้ 'เปลี่ยน' สถานะเมื่อไหร่
+      changed_when: "'Your Kubernetes control-plane has initialized successfully!' in kubeadm_init_result.stdout"
+      # กำหนดเงื่อนไขว่า Task นี้ 'ล้มเหลว' เมื่อไหร่
+      failed_when: "'error execution phase preflight' in kubeadm_init_result.stderr or 'fatal' in kubeadm_init_result.stderr"
+
+    - name: Display kubeadm init output and instructions
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ kubeadm_init_result.stdout_lines }}"
+      when: kubeadm_init_result.changed # <-- แสดงผลลัพธ์ก็ต่อเมื่อมีการรัน kubeadm init จริงๆ
+
+    - name: Copy kubeconfig for current user
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: ~/.kube/config
+        remote_src: yes # <-- ระบุว่าไฟล์ต้นทางอยู่บนเครื่อง remote
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+      when: kubeadm_init_result.changed # <-- ทำเมื่อ kubeadm init รันสำเร็จ
+
+    - name: Set KUBECONFIG environment variable for current user's session
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.bashrc
+        line: 'export KUBECONFIG=~/.kube/config'
+        regexp: '^export KUBECONFIG='
+        state: present
+      when: kubeadm_init_result.changed # <-- ทำเมื่อ kubeadm init รันสำเร็จ
+
+    - name: Apply Calico CNI (or other CNI of your choice)
+      ansible.builtin.command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      # คุณอาจจะต้อง unset proxy สำหรับ kubectl apply ด้วย หากยังเจอปัญหา
+      environment:
+        HTTP_PROXY: ""
+        HTTPS_PROXY: ""
+        # NO_PROXY: "..." (ตามที่แนะนำข้างต้น)
+      when: kubeadm_init_result.changed
+ 
+  handlers:
+    - name: Restart containerd
+      ansible.builtin.systemd_service:
+        name: containerd
+        state: restarted
+      listen: "Restart containerd"
