@@ -2,7 +2,7 @@
   hosts: haproxy
   become: true
   vars:
-    jenkins_host: 192.168.3.4
+    jenkins_host: "{{ hostvars['jenkins'].ansible_host }}"
   tasks:
     - name: Install HAProxy
       apt:
