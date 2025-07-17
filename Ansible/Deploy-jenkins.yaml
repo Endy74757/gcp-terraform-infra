@@ -7,10 +7,17 @@
         name: openjdk-21-jre
         state: present
         update_cache: yes
+
+    - name: Create directory for APT keyrings
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
     
     - name: Add key APT Jenkins's repository
       ansible.builtin.apt_key:
         url: https://pkg.jenkins.io/debian/jenkins.io-2023.key
+        dest: /etc/apt/keyrings/jenkins.gpg
         state: present 
         
     - name: Add APT Jenkins's repository
