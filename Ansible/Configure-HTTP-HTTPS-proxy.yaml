@@ -2,7 +2,8 @@
   hosts: private, internal
   become: true
   vars:
-    proxy_ip: "192.168.1.6" # <--- ใส่ IP ของ Squid Proxy ที่นี่
+    proxy_ip: "{{ hostvars['squidproxy'].ansible_host }}" # <--- ใส่ IP ของ Squid Proxy ที่นี่
+    proxy_port: "3128"
 
   tasks:
     - name: Create proxy configuration file
@@ -10,8 +11,8 @@
         dest: /etc/profile.d/proxy.sh
         content: |
           #!/bin/sh
-          export http_proxy="http://{{ proxy_ip }}:3128"
-          export https_proxy="http://{{ proxy_ip }}:3128"
+          export http_proxy="http://{{ proxy_ip }}:{{ proxy_port }}"
+          export https_proxy="http://{{ proxy_ip }}:{{ proxy_port }}"
           export no_proxy="localhost,127.0.0.1,*.internal.domain"
         mode: '0644'
 

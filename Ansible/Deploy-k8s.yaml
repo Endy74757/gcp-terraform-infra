@@ -1,8 +1,10 @@
 - hosts: k8s
   become: yes
   vars:
-    http_proxy_env: "http://192.168.1.6:3128"
-    https_proxy_env: "http://192.168.1.6:3128"
+    proxy_ip: "{{ hostvars['squidproxy'].ansible_host }}"
+    proxy_port: "3128"
+    http_proxy_env: "http://{{ proxy_ip }}:{{ proxy_port }}"
+    https_proxy_env: "http://{{ proxy_ip }}:{{ proxy_port }}"
     no_proxy_env: "localhost,127.0.0.1,10.96.0.0/12,10.244.0.0/16,kubernetes.default.svc,*.svc,*.svc.cluster.local,192.168.2.3"
     k8s_version: "v1.30.1"
     image_registry: "registry.k8s.io"
