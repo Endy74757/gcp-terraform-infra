@@ -156,7 +156,6 @@
     - name: Ensure systemd manager configuration is reloaded
       ansible.builtin.systemd_service:
         daemon_reload: yes
-      notify: Restart containerd
     
     - name: kubeadm reset
       ansible.builtin.command: >
