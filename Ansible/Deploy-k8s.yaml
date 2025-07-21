@@ -153,9 +153,12 @@
         regexp: 'sandbox_image\s*=\s*".*?"'
         replace: 'sandbox_image = "registry.k8s.io/pause:3.9"'
 
-    - name: Ensure systemd manager configuration is reloaded
-      ansible.builtin.systemd_service:
-        daemon_reload: yes
+    - name: Restart containerd service
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+        daemon_reload: yes # สั่งให้ systemd โหลด daemon ใหม่ เพื่อให้แน่ใจว่าการเปลี่ยนแปลงถูกรับรู้
+      listen: Restart containerd
     
     - name: kubeadm reset
       ansible.builtin.command: >
@@ -215,3 +218,4 @@
       ansible.builtin.systemd:
         name: containerd
         state: restarted
+        daemon_reload: yes
